@@ -28,7 +28,8 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
     client = get_client(bot)
     text = ""
     for ml in client.get_lists():
-        text += f"{ml.display_name}:\nMembers: {ml.member_count}\nDescription: {ml.description}\nJoin: /{prefix}join_{ml.list_id}\nLeave: /{prefix}leave_{ml.list_id}\n\n"
+        description = ml.settings["info"]
+        text += f"{ml.display_name}:\nMembers: {ml.member_count}\nDescription: {description}\nJoin: /{prefix}join_{ml.list_id}\nLeave: /{prefix}leave_{ml.list_id}\n\n"
     replies.add(text=text or "❌ Empty list")
 
 
