@@ -35,14 +35,14 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
 
     client = get_client(bot)
     groups, channels = [], []
-    for ml in client.get_lists():
-        settings = ml.settings
+    for mailinglist in client.get_lists():
+        settings = mailinglist.settings
         mlist = (
-            ml.list_id,
-            ml.display_name,
+            mailinglist.list_id,
+            mailinglist.display_name,
             settings["info"],
             settings["last_post_at"],
-            ml.member_count,
+            mailinglist.member_count,
         )
         if settings["allow_list_posts"]:
             groups.append(mlist)
@@ -67,9 +67,9 @@ def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
     """join the given group or channel."""
     client = get_client(bot)
     try:
-        ml = client.get_list(payload)
+        mlist = client.get_list(payload)
         addr = message.get_sender_contact().addr
-        ml.subscribe(
+        mlist.subscribe(
             addr, pre_verified=True, pre_confirmed=True, send_welcome_message=True
         )
     except HTTPError as ex:
@@ -81,8 +81,8 @@ def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
     """leave the given group or channel."""
     client = get_client(bot)
     try:
-        ml = client.get_list(payload)
-        ml.unsubscribe(message.get_sender_contact().addr)
+        mlist = client.get_list(payload)
+        mlist.unsubscribe(message.get_sender_contact().addr)
     except ValueError as ex:
         bot.logger.exception(ex)
         replies.add(text="❌ You are not a member of that group/channel", quote=message)
