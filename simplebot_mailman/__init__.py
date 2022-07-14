@@ -41,7 +41,7 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
             mailinglist.list_id,
             mailinglist.display_name,
             settings["info"],
-            settings["last_post_at"],
+            (settings["last_post_at"] or "").split("T")[0],
             mailinglist.member_count,
         )
         if settings["allow_list_posts"]:
