@@ -5,6 +5,7 @@ import simplebot
 from deltachat import Message
 from simplebot.bot import DeltaBot, Replies
 
+from .templates import template
 from .util import get_client, get_default
 
 
@@ -23,14 +24,43 @@ def deltabot_init(bot: DeltaBot) -> None:
 
 
 def list_cmd(bot: DeltaBot, replies: Replies) -> None:
-    """show the list of public groups and channels."""
-    prefix = get_default(bot, "command_prefix", "")
+    """show the list of public super groups and channels."""
+
+    def get_list(bot_addr: str, chats: list) -> str:
+        return template.render(
+            bot_addr=bot_addr,
+            prefix=get_default(bot, "command_prefix", ""),
+            chats=chats,
+        )
+
     client = get_client(bot)
-    text = ""
+    groups, channels = [], []
     for ml in client.get_lists():
-        description = ml.settings["info"]
-        text += f"{ml.display_name}:\nMembers: {ml.member_count}\nDescription: {description}\nJoin: /{prefix}join_{ml.list_id}\nLeave: /{prefix}leave_{ml.list_id}\n\n"
-    replies.add(text=text or "❌ Empty list")
+        settings = ml.settings
+        mlist = (
+            ml.list_id,
+            ml.display_name,
+            settings["info"],
+            settings["last_post_at"],
+            ml.member_count,
+        )
+        if settings["allow_list_posts"]:
+            groups.append(mlist)
+        else:
+            channels.append(mlist)
+
+    if groups:
+        groups.sort(key=lambda g: g[-1], reverse=True)
+        text = f"⬇️ Super Groups ({len(groups)}) ⬇️"
+        replies.add(text=text, html=get_list(bot.self_contact.addr, groups))
+
+    if channels:
+        channels.sort(key=lambda c: c[-1], reverse=True)
+        text = f"⬇️ Channels ({len(channels)}) ⬇️"
+        replies.add(text=text, html=get_list(bot.self_contact.addr, channels))
+
+    if not groups and not channels:
+        replies.add(text="❌ Empty List")
 
 
 def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
