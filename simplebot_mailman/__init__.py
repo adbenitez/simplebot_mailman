@@ -21,6 +21,10 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(func=list_cmd, name=f"/{prefix}list")
     bot.commands.register(func=join_cmd, name=f"/{prefix}join")
     bot.commands.register(func=leave_cmd, name=f"/{prefix}leave")
+    bot.commands.register(func=listban_cmd, name=f"/{prefix}banUser")
+    bot.commands.register(func=listunban_cmd, name=f"/{prefix}unbanUser")
+    bot.commands.register(func=siteban_cmd, name=f"/{prefix}globalBan", admin=True)
+    bot.commands.register(func=siteunban_cmd, name=f"/{prefix}globalUnban", admin=True)
     bot.commands.register(func=add_owner_cmd, name=f"/{prefix}add_owner", admin=True)
     bot.commands.register(
         func=add_moderator_cmd, name=f"/{prefix}add_moderator", admin=True
@@ -57,9 +61,8 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
             chats=chats,
         )
 
-    client = get_client(bot)
     groups, channels = [], []
-    for mailinglist in client.get_lists(advertised=True):
+    for mailinglist in get_client(bot).get_lists(advertised=True):
         settings = mailinglist.settings
         mlist = (
             mailinglist.list_id,
@@ -89,9 +92,8 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
 
 def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """join the given super group or channel."""
-    client = get_client(bot)
     try:
-        mlist = client.get_list(payload)
+        mlist = get_client(bot).get_list(payload)
         addr = message.get_sender_contact().addr
         mlist.subscribe(
             addr, pre_verified=True, pre_confirmed=True, send_welcome_message=True
@@ -103,9 +105,8 @@ def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
 
 def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """leave the given super group or channel."""
-    client = get_client(bot)
     try:
-        mlist = client.get_list(payload)
+        mlist = get_client(bot).get_list(payload)
         mlist.unsubscribe(message.get_sender_contact().addr)
     except ValueError as ex:
         bot.logger.exception(ex)
@@ -118,8 +119,7 @@ def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
 def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     try:
         mltype, mladdr, mlname = payload.split(maxsplit=2)
-        client = get_client(bot)
-        domain = client.get_domain(get_default(bot, "domain", ""))
+        domain = get_client(bot).get_domain(get_default(bot, "domain", ""))
         if mltype == "channel":
             mltype = "legacy-announce"
         elif mltype == "group":
@@ -143,8 +143,7 @@ def settings_cmd(
         mlid, *args = payload.split(maxsplit=2)
         key = args[0]
         value = args[1] if len(args) == 2 else None
-        client = get_client(bot)
-        mlist = client.get_list(mlid)
+        mlist = get_client(bot).get_list(mlid)
         settings = mlist.settings
         if value is None:
             value = settings[key]
@@ -163,8 +162,7 @@ def add_owner_cmd(
     """add the given address as owner of the given mailing list."""
     try:
         mlid, addr = payload.split(maxsplit=1)
-        client = get_client(bot)
-        mlist = client.get_list(mlid)
+        mlist = get_client(bot).get_list(mlid)
         mlist.add_owner(addr)
         replies.add(text=f"{addr} added as owner", quote=message)
     except Exception as ex:
@@ -178,8 +176,7 @@ def remove_owner_cmd(
     """remove the owner role of the given address in the given mailing list."""
     try:
         mlid, addr = payload.split(maxsplit=1)
-        client = get_client(bot)
-        mlist = client.get_list(mlid)
+        mlist = get_client(bot).get_list(mlid)
         mlist.remove_owner(addr)
         replies.add(text=f"{addr} removed from owners", quote=message)
     except Exception as ex:
@@ -193,8 +190,7 @@ def add_moderator_cmd(
     """add the given address as moderator of the given mailing list."""
     try:
         mlid, addr = payload.split(maxsplit=1)
-        client = get_client(bot)
-        mlist = client.get_list(mlid)
+        mlist = get_client(bot).get_list(mlid)
         mlist.add_moderator(addr)
         replies.add(text=f"{addr} added as moderator", quote=message)
     except Exception as ex:
@@ -208,10 +204,73 @@ def remove_moderator_cmd(
     """remove the moderator role of the given address in the given mailing list."""
     try:
         mlid, addr = payload.split(maxsplit=1)
-        client = get_client(bot)
-        mlist = client.get_list(mlid)
+        mlist = get_client(bot).get_list(mlid)
         mlist.remove_moderator(addr)
         replies.add(text=f"{addr} removed from moderators", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def listban_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """ban the given address from the given mailing list."""
+    try:
+        mlid, addr = payload.split(maxsplit=1)
+        mlist = get_client(bot).get_list(mlid)
+        if mlist.is_owner_or_mod(addr) or bot.is_admin(addr):
+            mlist.bans.add(addr)
+            replies.add(text=f"{addr} banned", quote=message)
+        else:
+            replies.add(
+                text=f"❌ You don't have enough permissions to perform that action",
+                quote=message,
+            )
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def listunban_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """unban the given address from the given mailing list."""
+    try:
+        mlid, addr = payload.split(maxsplit=1)
+        mlist = get_client(bot).get_list(mlid)
+        if mlist.is_owner_or_mod(addr) or bot.is_admin(addr):
+            mlist.bans.remove(addr)
+            replies.add(text=f"{addr} unbanned", quote=message)
+        else:
+            replies.add(
+                text=f"❌ You don't have enough permissions to perform that action",
+                quote=message,
+            )
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def siteban_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """ban the given address from all mailing list."""
+    try:
+        get_client(bot).bans.add(payload)
+        replies.add(text=f"{payload} banned", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def siteunban_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """unban the given address from all mailing list."""
+    try:
+        get_client(bot).bans.remove(payload)
+        replies.add(text=f"{payload} unbanned", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
