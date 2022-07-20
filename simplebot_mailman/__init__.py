@@ -23,6 +23,8 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(func=leave_cmd, name=f"/{prefix}leave")
     bot.commands.register(func=listban_cmd, name=f"/{prefix}banUser")
     bot.commands.register(func=listunban_cmd, name=f"/{prefix}unbanUser")
+    bot.commands.register(func=name_cmd, name=f"/{prefix}name")
+    bot.commands.register(func=topic_cmd, name=f"/{prefix}topic")
     bot.commands.register(func=siteban_cmd, name=f"/{prefix}globalBan", admin=True)
     bot.commands.register(func=siteunban_cmd, name=f"/{prefix}globalUnban", admin=True)
     bot.commands.register(func=add_owner_cmd, name=f"/{prefix}add_owner", admin=True)
@@ -212,14 +214,58 @@ def remove_moderator_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
+def name_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    """set the name of the given super group or channel."""
+    try:
+        mlid, name = payload.split(maxsplit=1)
+        mlist = get_client(bot).get_list(mlid)
+        addr = message.get_sender_contact().addr
+        if bot.is_admin(addr) or mlist.is_owner_or_mod(addr):
+            settings = mlist.settings
+            settings["description"] = name
+            settings["display_name"] = name
+            settings.save()
+            replies.add(text="Name updated", quote=message)
+        else:
+            replies.add(
+                text="❌ You don't have enough permissions to perform that action",
+                quote=message,
+            )
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def topic_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    """set the topic/description of the given super group or channel."""
+    try:
+        mlid, topic = payload.split(maxsplit=1)
+        mlist = get_client(bot).get_list(mlid)
+        addr = message.get_sender_contact().addr
+        if bot.is_admin(addr) or mlist.is_owner_or_mod(addr):
+            settings = mlist.settings
+            settings["info"] = topic
+            settings.save()
+            replies.add(text="Topic updated", quote=message)
+        else:
+            replies.add(
+                text="❌ You don't have enough permissions to perform that action",
+                quote=message,
+            )
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
 def listban_cmd(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
-    """ban the given address from the given mailing list."""
+    """ban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
         mlist = get_client(bot).get_list(mlid)
-        if mlist.is_owner_or_mod(addr) or bot.is_admin(addr):
+        sender = message.get_sender_contact().addr
+        if bot.is_admin(sender) or mlist.is_owner_or_mod(sender):
             mlist.bans.add(addr)
             replies.add(text=f"{addr} banned", quote=message)
         else:
@@ -235,11 +281,12 @@ def listban_cmd(
 def listunban_cmd(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
-    """unban the given address from the given mailing list."""
+    """unban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
         mlist = get_client(bot).get_list(mlid)
-        if mlist.is_owner_or_mod(addr) or bot.is_admin(addr):
+        sender = message.get_sender_contact().addr
+        if bot.is_admin(sender) or mlist.is_owner_or_mod(sender):
             mlist.bans.remove(addr)
             replies.add(text=f"{addr} unbanned", quote=message)
         else:
