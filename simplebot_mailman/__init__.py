@@ -25,7 +25,9 @@ def deltabot_init(bot: DeltaBot) -> None:
 
     /{prefix}settings mylist.example.com advertised False
     """
-    bot.commands.register(func=settings_cmd, name=f"/{prefix}settings", admin=True)
+    bot.commands.register(
+        func=settings_cmd, name=f"/{prefix}settings", help=desc, admin=True
+    )
     desc = f"""create a new mailing list.
 
     /{prefix}create legacy-announce mychannel@example.com My Channel
