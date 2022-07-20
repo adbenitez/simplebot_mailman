@@ -46,7 +46,8 @@ def deltabot_init(bot: DeltaBot) -> None:
     )
     desc = f"""create a new mailing list.
 
-    /{prefix}create legacy-announce mychannel@example.com My Channel
+    /{prefix}create channel mychannel My Channel
+    /{prefix}create group mygroup My Group
     """
     bot.commands.register(
         func=create_cmd, name=f"/{prefix}create", help=desc, admin=True
@@ -132,7 +133,7 @@ def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
         settings["description"] = mlname
         settings["default_nonmember_action"] = "reject"
         settings.save()
-        mlist.unsubscribe(message.get_sender_contact().addr)
+        replies.add(text="Mailing list created successfully", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Failed to create mailing list: {ex}", quote=message)
