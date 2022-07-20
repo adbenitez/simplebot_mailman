@@ -21,6 +21,18 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(func=list_cmd, name=f"/{prefix}list")
     bot.commands.register(func=join_cmd, name=f"/{prefix}join")
     bot.commands.register(func=leave_cmd, name=f"/{prefix}leave")
+    desc = f"""change settings of the given mailing list.
+
+    /{prefix}settings mylist.example.com advertised False
+    """
+    bot.commands.register(func=settings_cmd, name=f"/{prefix}settings", admin=True)
+    desc = f"""create a new mailing list.
+
+    /{prefix}create legacy-announce mychannel@example.com My Channel
+    """
+    bot.commands.register(
+        func=create_cmd, name=f"/{prefix}create", help=desc, admin=True
+    )
 
 
 def list_cmd(bot: DeltaBot, replies: Replies) -> None:
@@ -35,7 +47,7 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
 
     client = get_client(bot)
     groups, channels = [], []
-    for mailinglist in client.get_lists():
+    for mailinglist in client.get_lists(advertised=True):
         settings = mailinglist.settings
         mlist = (
             mailinglist.list_id,
@@ -64,7 +76,7 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
 
 
 def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
-    """join the given group or channel."""
+    """join the given super group or channel."""
     client = get_client(bot)
     try:
         mlist = client.get_list(payload)
@@ -78,7 +90,7 @@ def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
 
 
 def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
-    """leave the given group or channel."""
+    """leave the given super group or channel."""
     client = get_client(bot)
     try:
         mlist = client.get_list(payload)
@@ -89,3 +101,45 @@ def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
     except HTTPError as ex:
         bot.logger.exception(ex)
         replies.add(text="❌ Invalid ID", quote=message)
+
+
+def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    try:
+        mltype, mladdr, mlname = payload.split(maxsplit=2)
+        client = get_client(bot)
+        domain = client.get_domain(get_default(bot, "domain", ""))
+        if mltype == "channel":
+            mltype = "legacy-announce"
+        elif mltype == "group":
+            mltype = "legacy-default"
+        mlist = domain.create_list(mladdr, style_name=mltype)
+        settings = mlist.settings
+        settings["display_name"] = mlname
+        settings["description"] = mlname
+        settings["default_nonmember_action"] = "reject"
+        settings.save()
+        mlist.unsubscribe(message.get_sender_contact().addr)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Failed to create mailing list: {ex}", quote=message)
+
+
+def settings_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    try:
+        mlid, *args = payload.split(maxsplit=2)
+        key = args[0]
+        value = args[1] if len(args) == 2 else None
+        client = get_client(bot)
+        mlist = client.get_list(mlid)
+        settings = mlist.settings
+        if value is None:
+            value = settings[key]
+        else:
+            settings[key] = value
+            settings.save()
+        replies.add(text=f"{key}={value!r}", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
