@@ -224,7 +224,7 @@ def listban_cmd(
             replies.add(text=f"{addr} banned", quote=message)
         else:
             replies.add(
-                text=f"❌ You don't have enough permissions to perform that action",
+                text="❌ You don't have enough permissions to perform that action",
                 quote=message,
             )
     except Exception as ex:
@@ -244,7 +244,7 @@ def listunban_cmd(
             replies.add(text=f"{addr} unbanned", quote=message)
         else:
             replies.add(
-                text=f"❌ You don't have enough permissions to perform that action",
+                text="❌ You don't have enough permissions to perform that action",
                 quote=message,
             )
     except Exception as ex:
