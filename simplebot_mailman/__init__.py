@@ -21,6 +21,16 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(func=list_cmd, name=f"/{prefix}list")
     bot.commands.register(func=join_cmd, name=f"/{prefix}join")
     bot.commands.register(func=leave_cmd, name=f"/{prefix}leave")
+    bot.commands.register(func=add_owner_cmd, name=f"/{prefix}add_owner", admin=True)
+    bot.commands.register(
+        func=add_moderator_cmd, name=f"/{prefix}add_moderator", admin=True
+    )
+    bot.commands.register(
+        func=remove_owner_cmd, name=f"/{prefix}remove_owner", admin=True
+    )
+    bot.commands.register(
+        func=remove_moderator_cmd, name=f"/{prefix}remove_moderator", admin=True
+    )
     desc = f"""change settings of the given mailing list.
 
     /{prefix}settings mylist.example.com advertised False
@@ -142,6 +152,66 @@ def settings_cmd(
             settings[key] = value
             settings.save()
         replies.add(text=f"{key}={value!r}", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def add_owner_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """add the given address as owner of the given mailing list."""
+    try:
+        mlid, addr = payload.split(maxsplit=1)
+        client = get_client(bot)
+        mlist = client.get_list(mlid)
+        mlist.add_owner(addr)
+        replies.add(text=f"{addr} added as owner", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def remove_owner_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """remove the owner role of the given address in the given mailing list."""
+    try:
+        mlid, addr = payload.split(maxsplit=1)
+        client = get_client(bot)
+        mlist = client.get_list(mlid)
+        mlist.remove_owner(addr)
+        replies.add(text=f"{addr} removed from owners", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def add_moderator_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """add the given address as moderator of the given mailing list."""
+    try:
+        mlid, addr = payload.split(maxsplit=1)
+        client = get_client(bot)
+        mlist = client.get_list(mlid)
+        mlist.add_moderator(addr)
+        replies.add(text=f"{addr} added as moderator", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def remove_moderator_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """remove the moderator role of the given address in the given mailing list."""
+    try:
+        mlid, addr = payload.split(maxsplit=1)
+        client = get_client(bot)
+        mlist = client.get_list(mlid)
+        mlist.remove_moderator(addr)
+        replies.add(text=f"{addr} removed from moderators", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
