@@ -101,6 +101,10 @@ def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
         mlist.subscribe(
             addr, pre_verified=True, pre_confirmed=True, send_welcome_message=True
         )
+        prefix = get_default(bot, "command_prefix", "")
+        replies.add(
+            text=f"Added, to leave send:\n/{prefix}leave_{payload}", quote=message
+        )
     except HTTPError as ex:
         bot.logger.exception(ex)
         replies.add(text="❌ Invalid ID", quote=message)
