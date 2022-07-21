@@ -165,11 +165,11 @@ def roles_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
             moderators.append(str(moderator.address))
         text = ""
         if owners:
-            text += "Owners:"
+            text += "Owners:\n"
             for owner in owners:
                 text += f"* {owner}\n"
         if moderators:
-            text += "\nModerators:"
+            text += "\nModerators:\n"
             for moderator in moderators:
                 text += f"* {moderator}\n"
         replies.add(text=text or "❌ Empty List", quote=message)
