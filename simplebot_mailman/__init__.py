@@ -25,14 +25,19 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(func=listunban_cmd, name=f"/{prefix}unbanUser")
     bot.commands.register(func=name_cmd, name=f"/{prefix}name")
     bot.commands.register(func=topic_cmd, name=f"/{prefix}topic")
+    bot.commands.register(func=roles_cmd, name=f"/{prefix}roles", admin=True)
     bot.commands.register(func=siteban_cmd, name=f"/{prefix}globalBan", admin=True)
     bot.commands.register(func=siteunban_cmd, name=f"/{prefix}globalUnban", admin=True)
+    bot.commands.register(func=add_member_cmd, name=f"/{prefix}add_member", admin=True)
+    bot.commands.register(
+        func=remove_member_cmd, name=f"/{prefix}remove_member", admin=True
+    )
     bot.commands.register(func=add_owner_cmd, name=f"/{prefix}add_owner", admin=True)
     bot.commands.register(
-        func=add_moderator_cmd, name=f"/{prefix}add_moderator", admin=True
+        func=remove_owner_cmd, name=f"/{prefix}remove_owner", admin=True
     )
     bot.commands.register(
-        func=remove_owner_cmd, name=f"/{prefix}remove_owner", admin=True
+        func=add_moderator_cmd, name=f"/{prefix}add_moderator", admin=True
     )
     bot.commands.register(
         func=remove_moderator_cmd, name=f"/{prefix}remove_moderator", admin=True
@@ -95,16 +100,27 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
 
 def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """join the given super group or channel."""
+    _join(payload, message.get_sender_contact().addr, bot, message, replies)
+
+
+def add_member_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """add the given address to the given super group or channel."""
+    mlid, addr = payload.split(maxsplit=1)
+    _join(mlid, addr, bot, message, replies)
+
+
+def _join(
+    mlid: str, addr: str, bot: DeltaBot, message: Message, replies: Replies
+) -> None:
     try:
-        mlist = get_client(bot).get_list(payload)
-        addr = message.get_sender_contact().addr
+        mlist = get_client(bot).get_list(mlid)
         mlist.subscribe(
             addr, pre_verified=True, pre_confirmed=True, send_welcome_message=True
         )
         prefix = get_default(bot, "command_prefix", "")
-        replies.add(
-            text=f"Added, to leave send:\n/{prefix}leave_{payload}", quote=message
-        )
+        replies.add(text=f"Added, to leave send:\n/{prefix}leave_{mlid}", quote=message)
     except HTTPError as ex:
         bot.logger.exception(ex)
         replies.add(text="❌ Invalid ID", quote=message)
@@ -112,15 +128,54 @@ def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
 
 def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """leave the given super group or channel."""
+    _leave(payload, message.get_sender_contact().addr, bot, message, replies)
+
+
+def remove_member_cmd(
+    bot: DeltaBot, payload: str, message: Message, replies: Replies
+) -> None:
+    """remove the given address from the given super group or channel."""
+    mlid, addr = payload.split(maxsplit=1)
+    _leave(mlid, addr, bot, message, replies)
+
+
+def _leave(
+    mlid: str, addr: str, bot: DeltaBot, message: Message, replies: Replies
+) -> None:
     try:
-        mlist = get_client(bot).get_list(payload)
-        mlist.unsubscribe(message.get_sender_contact().addr)
+        mlist = get_client(bot).get_list(mlid)
+        mlist.unsubscribe(addr)
     except ValueError as ex:
         bot.logger.exception(ex)
         replies.add(text="❌ You are not a member of that group/channel", quote=message)
     except HTTPError as ex:
         bot.logger.exception(ex)
         replies.add(text="❌ Invalid ID", quote=message)
+
+
+def roles_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    """get the addresses with administrative roles in the given super group or channel."""
+    try:
+        mlist = get_client(bot).get_list(payload)
+        owners = []
+        for owner in mlist.owners:
+            owners.append(str(owner.address))
+        moderators = []
+        for moderator in mlist.moderators:
+            moderators.append(str(moderator.address))
+        text = ""
+        if owners:
+            text += "Owners:"
+            for owner in owners:
+                text += f"* {owner}\n"
+        if moderators:
+            text += "\nModerators:"
+            for moderator in moderators:
+                text += f"* {moderator}\n"
+        replies.add(text=text or "❌ Empty List", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
 def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
