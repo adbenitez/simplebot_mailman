@@ -190,7 +190,6 @@ def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
         settings = mlist.settings
         settings["display_name"] = mlname
         settings["description"] = mlname
-        settings["default_nonmember_action"] = "reject"
         settings.save()
         replies.add(text="Mailing list created successfully", quote=message)
     except Exception as ex:
