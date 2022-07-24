@@ -318,7 +318,7 @@ def unlink_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
         chanid, groupid = payload.split()
         client = get_client(bot)
         client.get_list(chanid).unsubscribe(client.get_list(groupid).fqdn_listname)
-        replies.add(text=f"Link disabled", quote=message)
+        replies.add(text="Link disabled", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
