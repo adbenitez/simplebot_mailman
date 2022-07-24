@@ -296,10 +296,9 @@ def link_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
         group = client.get_list(groupid)
         settings = group.settings
         chan_addr = chan.fqdn_listname
-        if chan_addr not in settings["accept_these_nonmembers"]:
-            settings["accept_these_nonmembers"].append(chan_addr)
-        if chan_addr not in settings["acceptable_aliases"]:
-            settings["acceptable_aliases"].append(chan_addr)
+        name, domain = chan_addr.split("@")
+        settings["accept_these_nonmembers"] = f"^{name}.*@{domain}$"
+        settings["acceptable_aliases"] = chan_addr
         settings.save()
         chan.subscribe(
             group.fqdn_listname,
