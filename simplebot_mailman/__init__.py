@@ -296,7 +296,9 @@ def link_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
         settings = group.settings
         if chan_addr not in settings["accept_these_nonmembers"]:
             settings["accept_these_nonmembers"].append(chan_addr)
-            settings.save()
+        if chan_addr not in settings["acceptable_aliases"]:
+            settings["acceptable_aliases"].append(chan_addr)
+        settings.save()
         _join(
             chanid,
             group.fqdn_listname,
@@ -326,7 +328,9 @@ def unlink_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
         settings = group.settings
         if chan_addr in settings["accept_these_nonmembers"]:
             settings["accept_these_nonmembers"].remove(chan_addr)
-            settings.save()
+        if chan_addr in settings["acceptable_aliases"]:
+            settings["acceptable_aliases"].remove(chan_addr)
+        settings.save()
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
