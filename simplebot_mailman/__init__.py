@@ -25,6 +25,8 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(func=listunban_cmd, name=f"/{prefix}unbanUser")
     bot.commands.register(func=name_cmd, name=f"/{prefix}name")
     bot.commands.register(func=topic_cmd, name=f"/{prefix}topic")
+    bot.commands.register(func=roles_cmd, name=f"/{prefix}link", admin=True)
+    bot.commands.register(func=roles_cmd, name=f"/{prefix}unlink", admin=True)
     bot.commands.register(func=roles_cmd, name=f"/{prefix}roles", admin=True)
     bot.commands.register(func=siteban_cmd, name=f"/{prefix}globalBan", admin=True)
     bot.commands.register(func=siteunban_cmd, name=f"/{prefix}globalUnban", admin=True)
@@ -100,7 +102,9 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
 
 def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """join the given super group or channel."""
-    _join(payload, message.get_sender_contact().addr, bot, message, replies)
+    prefix = get_default(bot, "command_prefix", "")
+    text = f"Added, to leave send:\n/{prefix}leave_{payload}"
+    _join(payload, message.get_sender_contact().addr, bot, message, replies, text)
 
 
 def add_member_cmd(
@@ -108,22 +112,29 @@ def add_member_cmd(
 ) -> None:
     """add the given address to the given super group or channel."""
     mlid, addr = payload.split(maxsplit=1)
-    _join(mlid, addr, bot, message, replies)
+    _join(mlid, addr, bot, message, replies, f"{addr} added as member")
 
 
 def _join(
-    mlid: str, addr: str, bot: DeltaBot, message: Message, replies: Replies
-) -> None:
+    mlid: str,
+    addr: str,
+    bot: DeltaBot,
+    message: Message,
+    replies: Replies,
+    success_msg: str,
+) -> bool:
     try:
         mlist = get_client(bot).get_list(mlid)
         mlist.subscribe(
             addr, pre_verified=True, pre_confirmed=True, send_welcome_message=True
         )
-        prefix = get_default(bot, "command_prefix", "")
-        replies.add(text=f"Added, to leave send:\n/{prefix}leave_{mlid}", quote=message)
+        if success_msg:
+            replies.add(text=success_msg, quote=message)
+        return True
     except HTTPError as ex:
         bot.logger.exception(ex)
         replies.add(text="❌ Invalid ID", quote=message)
+        return False
 
 
 def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
@@ -268,6 +279,54 @@ def remove_moderator_cmd(
         mlist = get_client(bot).get_list(mlid)
         mlist.remove_moderator(addr)
         replies.add(text=f"{addr} removed from moderators", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def link_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    """link the the given channel with the given super group.
+
+    All messages published in the channel will be sent also in the super group.
+    """
+    try:
+        chanid, groupid = payload.split()
+        chan_addr = get_client(bot).get_list(chanid).fqdn_listname
+        group = get_client(bot).get_list(groupid)
+        settings = group.settings
+        if chan_addr not in settings["accept_these_nonmembers"]:
+            settings["accept_these_nonmembers"].append(chan_addr)
+            settings.save()
+        _join(
+            chanid,
+            group.fqdn_listname,
+            bot,
+            message,
+            replies,
+            f"Linked: {chanid} ➡️ {groupid}",
+        )
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def unlink_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    """unlink the the given channel and super group."""
+    try:
+        chanid, groupid = payload.split()
+        chan_addr = get_client(bot).get_list(chanid).fqdn_listname
+        group = get_client(bot).get_list(groupid)
+        _leave(
+            chanid,
+            group.fqdn_listname,
+            bot,
+            message,
+            replies,
+        )
+        settings = group.settings
+        if chan_addr in settings["accept_these_nonmembers"]:
+            settings["accept_these_nonmembers"].remove(chan_addr)
+            settings.save()
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
