@@ -291,22 +291,23 @@ def link_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
     """
     try:
         chanid, groupid = payload.split()
-        chan_addr = get_client(bot).get_list(chanid).fqdn_listname
-        group = get_client(bot).get_list(groupid)
+        client = get_client(bot)
+        chan = client.get_list(chanid)
+        group = client.get_list(groupid)
         settings = group.settings
+        chan_addr = chan.fqdn_listname
         if chan_addr not in settings["accept_these_nonmembers"]:
             settings["accept_these_nonmembers"].append(chan_addr)
         if chan_addr not in settings["acceptable_aliases"]:
             settings["acceptable_aliases"].append(chan_addr)
         settings.save()
-        _join(
-            chanid,
+        chan.subscribe(
             group.fqdn_listname,
-            bot,
-            message,
-            replies,
-            f"Linked: {chanid} ➡️ {groupid}",
+            pre_verified=True,
+            pre_confirmed=True,
+            send_welcome_message=True,
         )
+        replies.add(text=f"Linked: {chanid} ➡️ {groupid}", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
@@ -316,21 +317,8 @@ def unlink_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
     """unlink the the given channel and super group."""
     try:
         chanid, groupid = payload.split()
-        chan_addr = get_client(bot).get_list(chanid).fqdn_listname
-        group = get_client(bot).get_list(groupid)
-        _leave(
-            chanid,
-            group.fqdn_listname,
-            bot,
-            message,
-            replies,
-        )
-        settings = group.settings
-        if chan_addr in settings["accept_these_nonmembers"]:
-            settings["accept_these_nonmembers"].remove(chan_addr)
-        if chan_addr in settings["acceptable_aliases"]:
-            settings["acceptable_aliases"].remove(chan_addr)
-        settings.save()
+        client = get_client(bot)
+        client.get_list(chanid).unsubscribe(client.get_list(groupid).fqdn_listname)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
