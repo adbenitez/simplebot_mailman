@@ -25,8 +25,6 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(func=listunban_cmd, name=f"/{prefix}unbanUser")
     bot.commands.register(func=name_cmd, name=f"/{prefix}name")
     bot.commands.register(func=topic_cmd, name=f"/{prefix}topic")
-    bot.commands.register(func=link_cmd, name=f"/{prefix}link", admin=True)
-    bot.commands.register(func=unlink_cmd, name=f"/{prefix}unlink", admin=True)
     bot.commands.register(func=roles_cmd, name=f"/{prefix}roles", admin=True)
     bot.commands.register(func=siteban_cmd, name=f"/{prefix}globalBan", admin=True)
     bot.commands.register(func=siteunban_cmd, name=f"/{prefix}globalUnban", admin=True)
@@ -279,46 +277,6 @@ def remove_moderator_cmd(
         mlist = get_client(bot).get_list(mlid)
         mlist.remove_moderator(addr)
         replies.add(text=f"{addr} removed from moderators", quote=message)
-    except Exception as ex:
-        bot.logger.exception(ex)
-        replies.add(text=f"❌ Error: {ex}", quote=message)
-
-
-def link_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
-    """link the the given channel with the given super group.
-
-    All messages published in the channel will be sent also in the super group.
-    """
-    try:
-        chanid, groupid = payload.split()
-        client = get_client(bot)
-        chan = client.get_list(chanid)
-        group = client.get_list(groupid)
-        settings = group.settings
-        chan_addr = chan.fqdn_listname
-        name, domain = chan_addr.split("@")
-        settings["accept_these_nonmembers"] = f"^{name}.*@{domain}$"
-        settings["acceptable_aliases"] = chan_addr
-        settings.save()
-        chan.subscribe(
-            group.fqdn_listname,
-            pre_verified=True,
-            pre_confirmed=True,
-            send_welcome_message=True,
-        )
-        replies.add(text=f"Linked: {chanid} ➡️ {groupid}", quote=message)
-    except Exception as ex:
-        bot.logger.exception(ex)
-        replies.add(text=f"❌ Error: {ex}", quote=message)
-
-
-def unlink_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
-    """unlink the the given channel and super group."""
-    try:
-        chanid, groupid = payload.split()
-        client = get_client(bot)
-        client.get_list(chanid).unsubscribe(client.get_list(groupid).fqdn_listname)
-        replies.add(text="Link disabled", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
