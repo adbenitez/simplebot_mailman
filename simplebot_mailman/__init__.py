@@ -136,8 +136,25 @@ def _join(
 
 
 def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
-    """leave the given super group or channel."""
-    _leave(payload, message.get_sender_contact().addr, bot, message, replies)
+    """leave the given super group or channel.
+
+    Also list the channels/groups you have joined if no id is given.
+    """
+    if payload:
+        _leave(payload, message.get_sender_contact().addr, bot, message, replies)
+    else:
+        ids = set()
+        addr = message.get_sender_contact().addr
+        for member in get_client(bot).get_user(addr).subscriptions:
+            if member.role == "member":
+                ids.add(member.list_id)
+        prefix = get_default(bot, "command_prefix", "")
+        text = ""
+        for mlist_id in ids:
+            text += f"/{prefix}leave_{mlist_id}\n\n"
+        replies.add(
+            text=text or "❌ You are not member of any group or channel", quote=message
+        )
 
 
 def remove_member_cmd(
