@@ -6,7 +6,7 @@ from deltachat import Message
 from simplebot.bot import DeltaBot, Replies
 
 from .templates import template
-from .util import get_client, get_default
+from .util import get_address, get_client, get_default
 
 
 @simplebot.hookimpl
@@ -348,10 +348,11 @@ def listban_cmd(
     """ban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
-        mlist = get_client(bot).get_list(mlid)
+        client = get_client(bot)
+        mlist = client.get_list(mlid)
         sender = message.get_sender_contact().addr
         if bot.is_admin(sender) or mlist.is_owner_or_mod(sender):
-            mlist.bans.add(addr)
+            mlist.bans.add(get_address(bot, client, addr))
             replies.add(text=f"{addr} banned", quote=message)
         else:
             replies.add(
@@ -369,10 +370,11 @@ def listunban_cmd(
     """unban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
-        mlist = get_client(bot).get_list(mlid)
+        client = get_client(bot)
+        mlist = client.get_list(mlid)
         sender = message.get_sender_contact().addr
         if bot.is_admin(sender) or mlist.is_owner_or_mod(sender):
-            mlist.bans.remove(addr)
+            mlist.bans.remove(get_address(bot, client, addr))
             replies.add(text=f"{addr} unbanned", quote=message)
         else:
             replies.add(
@@ -389,7 +391,8 @@ def siteban_cmd(
 ) -> None:
     """ban the given address from all mailing list."""
     try:
-        get_client(bot).bans.add(payload)
+        client = get_client(bot)
+        client.bans.add(get_address(bot, client, payload))
         replies.add(text=f"{payload} banned", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
@@ -401,7 +404,8 @@ def siteunban_cmd(
 ) -> None:
     """unban the given address from all mailing list."""
     try:
-        get_client(bot).bans.remove(payload)
+        client = get_client(bot)
+        client.bans.remove(get_address(bot, client, payload))
         replies.add(text=f"{payload} unbanned", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
