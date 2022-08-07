@@ -57,6 +57,7 @@ def deltabot_init(bot: DeltaBot) -> None:
     bot.commands.register(
         func=create_cmd, name=f"/{prefix}create", help=desc, admin=True
     )
+    bot.commands.register(func=delete_cmd, name=f"/{prefix}delete", admin=True)
 
 
 def list_cmd(bot: DeltaBot, replies: Replies) -> None:
@@ -199,6 +200,16 @@ def roles_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
             for moderator in moderators:
                 text += f"* {moderator}\n"
         replies.add(text=text or "❌ Empty List", quote=message)
+    except Exception as ex:
+        bot.logger.exception(ex)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
+
+
+def delete_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    """delete the mailing list with the given ID."""
+    try:
+        get_client(bot).get_list(payload).delete()
+        replies.add(text="Deleted", quote=message)
     except Exception as ex:
         bot.logger.exception(ex)
         replies.add(text=f"❌ Error: {ex}", quote=message)
