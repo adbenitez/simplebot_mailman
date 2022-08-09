@@ -227,6 +227,7 @@ def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
         settings = mlist.settings
         settings["display_name"] = mlname
         settings["description"] = mlname
+        settings["process_bounces"] = False
         settings["anonymous_list"] = True
         settings.save()
         replies.add(text="Mailing list created successfully", quote=message)
