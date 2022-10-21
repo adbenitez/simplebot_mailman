@@ -334,8 +334,8 @@ def topic_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-@simplebot.command
-def banUser(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+@simplebot.command(name="/banUser")
+def ban_user(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """ban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
@@ -355,8 +355,8 @@ def banUser(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> 
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-@simplebot.command
-def unbanUser(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+@simplebot.command(name="/unbanUser")
+def unban_user(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """unban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
