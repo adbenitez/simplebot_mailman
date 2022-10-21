@@ -31,10 +31,6 @@ To install run::
 Customization
 -------------
 
-If this plugin has collisions with commands from other plugins in your bot, you can set a command prefix like ``/mailman_`` for all commands::
-
-  simplebot -a bot@example.com db -s simplebot_mailman/command_prefix mailman_
-
 To set the URL of the Mailman REST API::
 
   simplebot -a bot@example.com db -s simplebot_mailman/api_url http://localhost:8001/3.1/

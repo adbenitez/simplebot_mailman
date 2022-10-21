@@ -16,50 +16,8 @@ def deltabot_init(bot: DeltaBot) -> None:
     get_default(bot, "api_password", "")
     get_default(bot, "domain", "example.com")
 
-    prefix = get_default(bot, "command_prefix", "")
 
-    bot.commands.register(func=list_cmd, name=f"/{prefix}list")
-    bot.commands.register(func=join_cmd, name=f"/{prefix}join")
-    bot.commands.register(func=leave_cmd, name=f"/{prefix}leave")
-    bot.commands.register(func=listban_cmd, name=f"/{prefix}banUser")
-    bot.commands.register(func=listunban_cmd, name=f"/{prefix}unbanUser")
-    bot.commands.register(func=name_cmd, name=f"/{prefix}name")
-    bot.commands.register(func=topic_cmd, name=f"/{prefix}topic")
-    bot.commands.register(func=roles_cmd, name=f"/{prefix}roles", admin=True)
-    bot.commands.register(func=siteban_cmd, name=f"/{prefix}globalBan", admin=True)
-    bot.commands.register(func=siteunban_cmd, name=f"/{prefix}globalUnban", admin=True)
-    bot.commands.register(func=add_member_cmd, name=f"/{prefix}add_member", admin=True)
-    bot.commands.register(
-        func=remove_member_cmd, name=f"/{prefix}remove_member", admin=True
-    )
-    bot.commands.register(func=add_owner_cmd, name=f"/{prefix}add_owner", admin=True)
-    bot.commands.register(
-        func=remove_owner_cmd, name=f"/{prefix}remove_owner", admin=True
-    )
-    bot.commands.register(
-        func=add_moderator_cmd, name=f"/{prefix}add_moderator", admin=True
-    )
-    bot.commands.register(
-        func=remove_moderator_cmd, name=f"/{prefix}remove_moderator", admin=True
-    )
-    desc = f"""change settings of the given mailing list.
-
-    /{prefix}settings mylist.example.com advertised False
-    """
-    bot.commands.register(
-        func=settings_cmd, name=f"/{prefix}settings", help=desc, admin=True
-    )
-    desc = f"""create a new mailing list.
-
-    /{prefix}create channel mychannel My Channel
-    /{prefix}create group mygroup My Group
-    """
-    bot.commands.register(
-        func=create_cmd, name=f"/{prefix}create", help=desc, admin=True
-    )
-    bot.commands.register(func=delete_cmd, name=f"/{prefix}delete", admin=True)
-
-
+@simplebot.command(name="/list")
 def list_cmd(bot: DeltaBot, replies: Replies) -> None:
     """show the list of public super groups and channels."""
 
@@ -99,16 +57,16 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
         replies.add(text="❌ Empty List")
 
 
-def join_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+@simplebot.command
+def join(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """join the given super group or channel."""
     prefix = get_default(bot, "command_prefix", "")
     text = f"Added, to leave send:\n/{prefix}leave_{payload}"
     _join(payload, message.get_sender_contact().addr, bot, message, replies, text)
 
 
-def add_member_cmd(
-    bot: DeltaBot, payload: str, message: Message, replies: Replies
-) -> None:
+@simplebot.command(admin=True)
+def add_member(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """add the given address to the given super group or channel."""
     mlid, addr = payload.split(maxsplit=1)
     _join(mlid, addr, bot, message, replies, f"{addr} added as member")
@@ -136,7 +94,8 @@ def _join(
         return False
 
 
-def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+@simplebot.command
+def leave(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """leave the given super group or channel.
 
     Also list the channels/groups you have joined if no id is given.
@@ -158,7 +117,8 @@ def leave_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
         )
 
 
-def remove_member_cmd(
+@simplebot.command(admin=True)
+def remove_member(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
     """remove the given address from the given super group or channel."""
@@ -180,6 +140,7 @@ def _leave(
         replies.add(text="❌ Invalid ID", quote=message)
 
 
+@simplebot.command(name="/roles", admin=True)
 def roles_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """get the addresses with administrative roles in the given super group or channel."""
     try:
@@ -205,7 +166,8 @@ def roles_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-def delete_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+@simplebot.command(admin=True)
+def delete(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """delete the mailing list with the given ID."""
     try:
         get_client(bot).get_list(payload).delete()
@@ -215,7 +177,14 @@ def delete_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
+@simplebot.command(name="/create", admin=True)
 def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
+    """create a new mailing list.
+
+    Examples:
+    /create channel mychannel My Channel
+    /create group mygroup My Group
+    """
     try:
         mltype, mladdr, mlname = payload.split(maxsplit=2)
         domain = get_client(bot).get_domain(get_default(bot, "domain", ""))
@@ -236,9 +205,15 @@ def create_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) 
         replies.add(text=f"❌ Failed to create mailing list: {ex}", quote=message)
 
 
+@simplebot.command(name="/settings", admin=True)
 def settings_cmd(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
+    """change settings of the given mailing list.
+
+    Example:
+    /settings mylist.example.com advertised False
+    """
     try:
         mlid, *args = payload.split(maxsplit=2)
         key = args[0]
@@ -256,9 +231,8 @@ def settings_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-def add_owner_cmd(
-    bot: DeltaBot, payload: str, message: Message, replies: Replies
-) -> None:
+@simplebot.command(admin=True)
+def add_owner(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """add the given address as owner of the given mailing list."""
     try:
         mlid, addr = payload.split(maxsplit=1)
@@ -270,7 +244,8 @@ def add_owner_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-def remove_owner_cmd(
+@simplebot.command(admin=True)
+def remove_owner(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
     """remove the owner role of the given address in the given mailing list."""
@@ -284,7 +259,8 @@ def remove_owner_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-def add_moderator_cmd(
+@simplebot.command(admin=True)
+def add_moderator(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
     """add the given address as moderator of the given mailing list."""
@@ -298,7 +274,8 @@ def add_moderator_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-def remove_moderator_cmd(
+@simplebot.command(admin=True)
+def remove_moderator(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
     """remove the moderator role of the given address in the given mailing list."""
@@ -312,6 +289,7 @@ def remove_moderator_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
+@simplebot.command(name="/name")
 def name_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """set the name of the given super group or channel."""
     try:
@@ -334,6 +312,7 @@ def name_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) ->
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
+@simplebot.command(name="/topic")
 def topic_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """set the topic/description of the given super group or channel."""
     try:
@@ -355,9 +334,8 @@ def topic_cmd(bot: DeltaBot, payload: str, message: Message, replies: Replies) -
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-def listban_cmd(
-    bot: DeltaBot, payload: str, message: Message, replies: Replies
-) -> None:
+@simplebot.command
+def banUser(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """ban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
@@ -377,9 +355,8 @@ def listban_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
-def listunban_cmd(
-    bot: DeltaBot, payload: str, message: Message, replies: Replies
-) -> None:
+@simplebot.command
+def unbanUser(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """unban the given address from the given super group or channel."""
     try:
         mlid, addr = payload.split(maxsplit=1)
@@ -399,6 +376,7 @@ def listunban_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
+@simplebot.command(name="/globalBan", admin=True)
 def siteban_cmd(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
@@ -412,6 +390,7 @@ def siteban_cmd(
         replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
+@simplebot.command(name="/globalUnban", admin=True)
 def siteunban_cmd(
     bot: DeltaBot, payload: str, message: Message, replies: Replies
 ) -> None:
