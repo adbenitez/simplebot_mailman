@@ -1,7 +1,21 @@
 """Utilities"""
 
+import gettext
+
+import pycountry
 from mailmanclient import Client
 from simplebot.bot import DeltaBot
+
+_langs = {}
+for lang in pycountry.languages:
+    if not hasattr(lang, "alpha_2"):
+        continue
+    try:
+        _langs[lang.alpha_2] = gettext.translation(
+            "iso639-3", pycountry.LOCALES_DIR, languages=[lang.alpha_2]
+        ).gettext(lang.name)
+    except FileNotFoundError:
+        _langs[lang.alpha_2] = lang.name
 
 
 def get_default(bot: DeltaBot, key: str, value: str = None) -> str:
@@ -33,3 +47,7 @@ def get_address(bot: DeltaBot, client: Client, addr: str) -> str:
         except Exception:
             pass
     return addr
+
+
+def language_code2name(code: str) -> str:
+    return _langs.get(code, code.upper())

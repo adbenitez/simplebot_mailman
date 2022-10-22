@@ -14,13 +14,14 @@
 	</style>
     </head>
     <body>
-	{% for list_id, name, topic, last_post_at, count in chats %}
+	{% for list_id, name, topic, lang, last_post_at, count in chats %}
 	    <div class="w3-card-2">
 		<header class="w3-container w3-delta">
 		    <h2>{{ name }}</h2>
 		</header>
 		<div class="w3-container">
 		    <p>👤 {{ count }}</p>
+                    <p>🌐 {{ lang }}</p>
 		    {% if last_post_at %}
 			📝 {{ last_post_at }}
 		    {% endif %}

@@ -1,3 +1,4 @@
-simplebot>=2.4.0
+simplebot>=4.0.0
 SQLAlchemy>=1.4.29
-mailmanclient==3.3.3
+mailmanclient>=3.3.3
+pycountry>=22.3.5

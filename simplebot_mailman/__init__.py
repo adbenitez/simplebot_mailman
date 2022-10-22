@@ -6,7 +6,7 @@ from deltachat import Message
 from simplebot.bot import DeltaBot, Replies
 
 from .templates import template
-from .util import get_address, get_client, get_default
+from .util import get_address, get_client, get_default, language_code2name
 
 
 @simplebot.hookimpl
@@ -35,6 +35,7 @@ def list_cmd(bot: DeltaBot, replies: Replies) -> None:
             mailinglist.list_id,
             mailinglist.display_name,
             settings["info"],
+            language_code2name(settings["preferred_language"]),
             (settings["last_post_at"] or "").split("T")[0],
             mailinglist.member_count,
         )
