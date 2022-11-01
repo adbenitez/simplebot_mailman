@@ -14,31 +14,36 @@
 	</style>
     </head>
     <body>
-	{% for list_id, name, topic, lang, last_post_at, count in chats %}
-	    <div class="w3-card-2">
-		<header class="w3-container w3-delta">
-		    <h2>{{ name }}</h2>
-		</header>
-		<div class="w3-container">
-		    <p>👤 {{ count }}</p>
-                    <p>🌐 {{ lang }}</p>
-		    {% if last_post_at %}
-			📝 {{ last_post_at }}
-		    {% endif %}
-		    <p>
-			{% if topic %}
-			    {% for line in topic.split("\n") %}
-				{% if loop.index != 1 %}
-				    <br>
-				{% endif %}
-				{{ line }}
-			    {% endfor %}
-			{% endif %}
-		    </p>
-		</div>
-		<a class="w3-btn w3-large" href="mailto:{{ bot_addr }}?body=/{{ prefix }}leave_{{ list_id }}">« Leave</a>
-		<a class="w3-btn w3-large w3-right" href="mailto:{{ bot_addr }}?body=/{{ prefix }}join_{{ list_id }}">Join »</a>
-	    </div>
-	{% endfor %}
+        {% for lang, chats in langs %}
+            <details>
+                <summary><h2>🌐 {{ lang }}</h2></summary>
+	        {% for list_id, name, topic, last_post_at, count in chats %}
+	            <div class="w3-card-2">
+		        <header class="w3-container w3-delta">
+		            <h2>{{ name }}</h2>
+                            <small>{{ count }} members</small>
+		        </header>
+		        <div class="w3-container">
+                            <p><b>🌐 Language: {{ lang }}</b></p>
+		            {% if last_post_at %}
+			        <b>💬 Last post: {{ last_post_at }}</b>
+		            {% endif %}
+		            <p>
+			        {% if topic %}
+			            {% for line in topic.split("\n") %}
+				        {% if loop.index != 1 %}
+				            <br>
+				        {% endif %}
+				        {{ line }}
+			            {% endfor %}
+			        {% endif %}
+		            </p>
+		        </div>
+		        <a class="w3-btn w3-large" href="mailto:{{ bot_addr }}?body=/{{ prefix }}leave_{{ list_id }}">« Leave</a>
+		        <a class="w3-btn w3-large w3-right" href="mailto:{{ bot_addr }}?body=/{{ prefix }}join_{{ list_id }}">Join »</a>
+	            </div>
+	        {% endfor %}
+            </details>
+        {% endfor %}
     </body>
 </html>

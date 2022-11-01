@@ -1,4 +1,5 @@
 """hooks, filters and commands definitions."""
+from typing import Dict
 from urllib.error import HTTPError
 
 import simplebot
@@ -21,37 +22,44 @@ def deltabot_init(bot: DeltaBot) -> None:
 def list_cmd(bot: DeltaBot, replies: Replies) -> None:
     """show the list of public super groups and channels."""
 
-    def get_list(bot_addr: str, chats: list) -> str:
+    def get_list(bot_addr: str, langs: Dict[str, list]) -> str:
         return template.render(
             bot_addr=bot_addr,
             prefix=get_default(bot, "command_prefix", ""),
-            chats=chats,
+            langs=sorted(langs.items()),
         )
 
-    groups, channels = [], []
+    groups: Dict[str, list] = {}
+    channels: Dict[str, list] = {}
     for mailinglist in get_client(bot).get_lists(advertised=True):
         settings = mailinglist.settings
+        lang = language_code2name(settings["preferred_language"])
         mlist = (
             mailinglist.list_id,
             mailinglist.display_name,
             settings["info"],
-            language_code2name(settings["preferred_language"]),
             (settings["last_post_at"] or "").split("T")[0],
             mailinglist.member_count,
         )
         if settings["allow_list_posts"]:
-            groups.append(mlist)
+            groups.setdefault(lang, []).append(mlist)
         else:
-            channels.append(mlist)
+            channels.setdefault(lang, []).append(mlist)
 
     if groups:
-        groups.sort(key=lambda g: g[-1], reverse=True)
-        text = f"⬇️ Super Groups ({len(groups)}) ⬇️"
+        count = 0
+        for _groups in groups.values():
+            _groups.sort(key=lambda g: g[-1], reverse=True)
+            count += len(_groups)
+        text = f"⬇️ Super Groups ({count}) ⬇️"
         replies.add(text=text, html=get_list(bot.self_contact.addr, groups))
 
     if channels:
-        channels.sort(key=lambda c: c[-1], reverse=True)
-        text = f"⬇️ Channels ({len(channels)}) ⬇️"
+        count = 0
+        for _channels in channels.values():
+            _channels.sort(key=lambda c: c[-1], reverse=True)
+            count += len(_channels)
+        text = f"⬇️ Channels ({count}) ⬇️"
         replies.add(text=text, html=get_list(bot.self_contact.addr, channels))
 
     if not groups and not channels:
