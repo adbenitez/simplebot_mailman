@@ -4,6 +4,9 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<style>
+         html,body{font-family:Verdana,sans-serif;font-size:15px;line-height:1.5}
+         html{overflow-x:hidden}
+         h2,summary{font-family:"Segoe UI",Arial,sans-serif;font-weight:400;margin:10px 0;font-size:30px}
 	 .w3-card-2{box-shadow:0 2px 4px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12) !important; margin-bottom: 15px;}
 	 .w3-btn{border:none;display:inline-block;outline:0;padding:6px 16px;vertical-align:middle;overflow:hidden;text-decoration:none !important;color:#fff;background-color:#5a6f78;text-align:center;cursor:pointer;white-space:nowrap}
 	 .w3-container:after,.w3-container:before{content:"";display:table;clear:both}
@@ -11,12 +14,14 @@
 	 .w3-right{float:right !important}
 	 .w3-large{font-size:18px !important}
 	 .w3-delta,.w3-hover-delta:hover{color:#fff !important;background-color:#5a6f78 !important}
+         header h2 {margin-bottom:2px}
+         header small {display:block;margin-bottom:4px}
 	</style>
     </head>
     <body>
         {% for lang, chats in langs %}
             <details>
-                <summary><h2>🌐 {{ lang }}</h2></summary>
+                <summary>🌐 {{ lang }} ({{chats|lenghts}})</summary>
 	        {% for list_id, name, topic, last_post_at, count in chats %}
 	            <div class="w3-card-2">
 		        <header class="w3-container w3-delta">
@@ -24,10 +29,12 @@
                             <small>{{ count }} members</small>
 		        </header>
 		        <div class="w3-container">
-                            <p><b>🌐 Language: {{ lang }}</b></p>
-		            {% if last_post_at %}
-			        <b>💬 Last post: {{ last_post_at }}</b>
-		            {% endif %}
+                            <p>
+                                <b>🌐 Language: </b>{{ lang }}
+                                {% if last_post_at %}
+			            <br/><b>💬 Last post: </b>{{ last_post_at }}
+		                {% endif %}
+                            </p>
 		            <p>
 			        {% if topic %}
 			            {% for line in topic.split("\n") %}
