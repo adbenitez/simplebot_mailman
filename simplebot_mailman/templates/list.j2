@@ -21,7 +21,7 @@
     <body>
         {% for lang, chats in langs %}
             <details>
-                <summary>🌐 {{ lang }} ({{chats|lengths}})</summary>
+                <summary>🌐 {{ lang }} ({{chats|length}})</summary>
 	        {% for list_id, name, topic, last_post_at, count in chats %}
 	            <div class="w3-card-2">
 		        <header class="w3-container w3-delta">
