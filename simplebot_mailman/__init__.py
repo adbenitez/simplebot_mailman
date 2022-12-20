@@ -78,6 +78,7 @@ def join(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> Non
 def add_member(bot: DeltaBot, payload: str, message: Message, replies: Replies) -> None:
     """add the given address to the given super group or channel."""
     mlid, addr = payload.split(maxsplit=1)
+    addr = get_address(bot, get_client(bot), addr)
     _join(mlid, addr, bot, message, replies, f"{addr} added as member")
 
 
@@ -132,6 +133,7 @@ def remove_member(
 ) -> None:
     """remove the given address from the given super group or channel."""
     mlid, addr = payload.split(maxsplit=1)
+    addr = get_address(bot, get_client(bot), addr)
     _leave(mlid, addr, bot, message, replies)
 
 
