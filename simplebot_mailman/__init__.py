@@ -91,8 +91,12 @@ def _join(
     success_msg: str,
 ) -> bool:
     try:
-        mlist = get_client(bot).get_list(mlid)
-        mlist.subscribe(
+        client = get_client(bot)
+        for member in client.get_user(addr).subscriptions:
+            if member.role == "member" and member.list_id == mlid:
+                replies.add(text="❌ You are already a member", quote=message)
+                return False
+        client.get_list(mlid).subscribe(
             addr, pre_verified=True, pre_confirmed=True, send_welcome_message=True
         )
         if success_msg:
