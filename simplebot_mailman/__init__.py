@@ -99,7 +99,7 @@ def _join(
         return True
     except HTTPError as ex:
         bot.logger.exception(ex)
-        replies.add(text=f"❌ Error {ex}", quote=message)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
         return False
 
 
@@ -147,7 +147,7 @@ def _leave(
         replies.add(text="❌ You are not a member of that group/channel", quote=message)
     except HTTPError as ex:
         bot.logger.exception(ex)
-        replies.add(text="❌ Invalid ID", quote=message)
+        replies.add(text=f"❌ Error: {ex}", quote=message)
 
 
 @simplebot.command(name="/roles", admin=True)
