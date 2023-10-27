@@ -14,7 +14,7 @@ Install
 
 To install run::
 
-  pip install simplebot-mailman
+  pip install git+https://github.com/adbenitez/simplebot_mailman.git
 
 Customization
 -------------
