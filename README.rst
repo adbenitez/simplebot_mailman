@@ -1,18 +1,6 @@
 Mailman SimpleBot plugin
 ========================
 
-.. image:: https://img.shields.io/pypi/v/simplebot_mailman.svg
-   :target: https://pypi.org/project/simplebot_mailman
-
-.. image:: https://img.shields.io/pypi/pyversions/simplebot_mailman.svg
-   :target: https://pypi.org/project/simplebot_mailman
-
-.. image:: https://pepy.tech/badge/simplebot_mailman
-   :target: https://pepy.tech/project/simplebot_mailman
-
-.. image:: https://img.shields.io/pypi/l/simplebot_mailman.svg
-   :target: https://pypi.org/project/simplebot_mailman
-
 .. image:: https://github.com/adbenitez/simplebot_mailman/actions/workflows/python-ci.yml/badge.svg
    :target: https://github.com/adbenitez/simplebot_mailman/actions/workflows/python-ci.yml
 
